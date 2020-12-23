@@ -201,13 +201,39 @@ fn main() {
     script_cmd.arg("-c").arg(&script);
     let script_return = script_cmd.output().expect("More shit broke");
     
-    println!("{:#?}", script_return);
+    //println!("{:#?}", script_return);
 
-    // 
     // check and init git
+    if init_git {
+        println!("Initialising git");
+        let cmd_return = Command::new("sh").arg("-c").arg("git init .")
+            .output().expect("Couldn't initialise git repo");
+        println!("{:#?}", cmd_return);
+        let cmd_return = Command::new("sh").arg("-c").arg("git add .")
+            .output().expect("Couldn't add git files");
+        println!("{:#?}", cmd_return);
+        let cmd_return = Command::new("sh").arg("-c").arg("git commit -m \"Initial commit\"")
+            .output().expect("Couldn't make first commit");
+        println!("{:#?}", cmd_return);
+
+    }
+
     // check and set remote
+    if git_remote.is_some() {
+        if ! init_git { println!("Can't add repo if git isn't initialised! Skipping"); }
+        else {
+            let cmd_string = String::from("git remote add origin ") + git_remote.unwrap();
+            let mut cmd = Command::new("sh");
+            cmd.arg("-c").arg(cmd_string);
+
+            let cmd_return = cmd.output().expect("Couldn't add git remote");
+            println!("{:#?}", cmd_return);
+        }
+    }
 
 }
+
+
 
 fn get_file_name(p: &Path) -> Option<String> {
     let f = p.file_name()?;
@@ -215,6 +241,7 @@ fn get_file_name(p: &Path) -> Option<String> {
 
     Some(String::from(s))
 }
+
 
 
 // TODO: combine copy and sed
@@ -235,6 +262,8 @@ fn copy_docs(src_home: &Path, dst_home: &Path) -> std::io::Result<()> {
 
     Ok(())
 }
+
+
 
 fn sed_docs(project_home: &Path, replace_token: &str, replace_str: &str) -> std::io::Result<()> {
     let docs_dir: &Path = &project_home.join("docs/");

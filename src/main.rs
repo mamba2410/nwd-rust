@@ -37,46 +37,49 @@ fn main() {
     let mut init_git: bool = false;
     let mut init_files: bool = true;
     let mut init_docs: bool = true;
+    let mut v: bool = false;
     let mut git_remote: Option<&String> = None;
 
 
     // Argument loop
     // TODO: be able to combine args in one flag
+    // TODO: tidy this up, there has to be a better way
     let mut args_vec = args.iter().skip(2).peekable();
     while args_vec.peek().is_some() {
         let arg = &args_vec.next().unwrap();
-        //println!("{:#?}", arg);
         match arg.as_str() {
-            // TODO: tidy this up, there has to be a better way
             "-l"|"--language"   => {
                 if args_vec.peek().is_some() {
                     language = &args_vec.next().unwrap();
-                    println!("Language set: {}", language);
+                    //println!("Language set: {}", language);
                 }
             },
             "--license"         => {
                 if args_vec.peek().is_some() {
                     license = args_vec.next();
-                    println!("License set: {}", license.unwrap());
+                    //println!("License set: {}", license.unwrap());
                 }
             },
             "-g"|"--init-git"   => {
                 init_git = true;
-                println!("Git init set: {}", init_git);
+                //println!("Git init set: {}", init_git);
             },
             "-I"|"--no-init-files" => {
                 init_files = false;
-                println!("Files init set: {}", init_files);
+                //println!("Files init set: {}", init_files);
             },
             "-r"|"--git-remote" => {
                 if args_vec.peek().is_some() {
                     git_remote = args_vec.next();
-                    println!("Git remote set: {}", git_remote.unwrap());
+                    //println!("Git remote set: {}", git_remote.unwrap());
                 }
             },
             "-D"|"--no-init-docs"  => {
                 init_docs = false;
-                println!("Docs init set: {}", init_docs);
+                //println!("Docs init set: {}", init_docs);
+            },
+            "-v"|"--verbose"        => {
+                v = true;
             },
             _   => {
                 println!("Unrecognised argument '{}'", arg);
@@ -93,10 +96,12 @@ fn main() {
     let language_home = program_home.join("languages");
     let license_home = program_home.join("licenses");
     let docs_home = program_home.join("docs");
-    //println!("{:#?}", program_home);
+
+    if v { println!("nwd home set to: {}", program_home.to_str().unwrap()); }
 
     if ! language_home.exists() {
-        println!("Language home does not exist. Please copy your data over to '{}'", language_home.to_str().unwrap());
+        println!("Language home does not exist. Please copy your data over to '{}'",
+                 language_home.to_str().unwrap());
         process::exit(1);
     }
 
@@ -107,7 +112,13 @@ fn main() {
         let file_name = get_file_name(path).unwrap();
         languages.push(file_name);
     }
-    //println!("{:#?}", languages);
+
+    if v {
+        println!("Available languages:");
+        for l in languages.iter() {
+            println!("\t{}", l);
+        }
+    }
 
     // Check if language is valid
     if ! languages.iter().any(|l| &l == &language) {
@@ -122,7 +133,13 @@ fn main() {
         let file_name = get_file_name(path).unwrap();
         licenses.push(file_name);
     }
-    //println!("{:#?}", licenses);
+
+    if v {
+        println!("Available licenses:");
+        for l in licenses.iter() {
+            println!("\t{}", l);
+        }
+    }
     
     // Check if license is valid
     if license.is_some() {
@@ -139,8 +156,8 @@ fn main() {
         println!("Project path exists!");
         process::exit(1);
     }
-
-    //println!("{}", project_path.to_str().unwrap());
+    
+    if v { println!("Project path: {}", project_path.to_str().unwrap()); }
 
     // Create dir and cd to it
     match fs::create_dir(project_path) {
@@ -154,13 +171,14 @@ fn main() {
     // Create tree
     let tree_dirs = fs::read_to_string(program_home.join("dirs.txt"))
         .expect("Couldn't create directory tree");
-    //println!("{}", tree_dirs);
+    
 
+    if v { println!("Creating tree: "); }
     for dir in tree_dirs.lines() {
         if dir.len() < 1 { continue; }
         let path = &project_path.join(dir);
         match fs::create_dir(path) {
-            Ok(_)   => {},
+            Ok(_)   => { if v { println!("\t{}", path.to_str().unwrap())} },
             Err(_)  => {
                 println!("Could not create {} in directory tree", dir);
                 process::exit(1);
@@ -170,7 +188,7 @@ fn main() {
 
     // Copy docs
     if init_docs {
-        copy_docs(program_home, project_path)
+        copy_docs(v, program_home, project_path)
             .expect("Copying docs failed");
     }
 
@@ -245,8 +263,11 @@ fn get_file_name(p: &Path) -> Option<String> {
 
 
 // TODO: combine copy and sed
-fn copy_docs(src_home: &Path, dst_home: &Path) -> std::io::Result<()> {
+fn copy_docs(v: bool, src_home: &Path, dst_home: &Path) -> std::io::Result<()> {
     let docs_dst = dst_home.join("docs/");
+
+    if v { println!("Copying docs to: {}", docs_dst.to_str().unwrap()); }
+
     if ! docs_dst.is_dir() {
         println!("Can't copy docs if docs directory isn't created!");
         process::exit(1);

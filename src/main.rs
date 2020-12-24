@@ -7,9 +7,11 @@ extern crate regex;
 use std::env;
 use std::fs;
 use std::process;
+use std::str;
 
 use std::path::Path;
 use std::process::Command;
+use std::process::Output;
 use regex::Regex;
 
 fn main() {
@@ -54,7 +56,7 @@ fn main() {
                     //println!("Language set: {}", language);
                 }
             },
-            "--license"         => {
+            "-L"|"--license"    => {
                 if args_vec.peek().is_some() {
                     license = args_vec.next();
                     //println!("License set: {}", license.unwrap());
@@ -79,6 +81,7 @@ fn main() {
                 //println!("Docs init set: {}", init_docs);
             },
             "-v"|"--verbose"        => {
+                // TODO: change to u8 and have different levels of verbose
                 v = true;
             },
             _   => {
@@ -192,16 +195,19 @@ fn main() {
             .expect("Copying docs failed");
     }
 
+    if v { println!("Copying readme"); }
     fs::copy(program_home.join("docs/README.md"), project_path.join("README.md"))
         .expect("Can't copy README!");
 
     if license.is_some() {
+        if v { println!("Copying license {}", license.unwrap()); }
         fs::copy(program_home.join("licenses").join(&license.unwrap()), project_path.join("LICENSE.md"))
             .expect("Can't copy license!");
     }
 
     // Change docs
     // TODO: bug when passing in -D flag, separate license and readme from docs
+    if v { println!("Modifying docs"); } 
     match sed_docs(&project_path, "PROJECT_NAME", &project_name) {
         Ok(())    => {},
         Err(e)  => {
@@ -215,24 +221,27 @@ fn main() {
     let script = String::from( language_home.join(&language).join("specifics.sh").to_str().unwrap() );
     let script = format!("{s} {h} {n} {i}", 
                     s=script, h=program_home.to_str().unwrap(), n=project_name, i=do_init);
+    if v { println!("Calling language bash script {}", script); }
     let mut script_cmd = Command::new("sh");
     script_cmd.arg("-c").arg(&script);
     let script_return = script_cmd.output().expect("More shit broke");
+    log_command(v, &script_return, "Language script");
     
-    //println!("{:#?}", script_return);
 
     // check and init git
     if init_git {
-        println!("Initialising git");
+        if v { println!("Initialising git"); }
         let cmd_return = Command::new("sh").arg("-c").arg("git init .")
             .output().expect("Couldn't initialise git repo");
-        println!("{:#?}", cmd_return);
+        log_command(v, &cmd_return, "Git init");
+
         let cmd_return = Command::new("sh").arg("-c").arg("git add .")
             .output().expect("Couldn't add git files");
-        println!("{:#?}", cmd_return);
+        log_command(v, &cmd_return, "Git add");
+
         let cmd_return = Command::new("sh").arg("-c").arg("git commit -m \"Initial commit\"")
             .output().expect("Couldn't make first commit");
-        println!("{:#?}", cmd_return);
+        log_command(v, &cmd_return, "Git commit");
 
     }
 
@@ -240,12 +249,13 @@ fn main() {
     if git_remote.is_some() {
         if ! init_git { println!("Can't add repo if git isn't initialised! Skipping"); }
         else {
+            if v { println!("Adding git remote {} as origin", git_remote.unwrap()); }
             let cmd_string = String::from("git remote add origin ") + git_remote.unwrap();
             let mut cmd = Command::new("sh");
             cmd.arg("-c").arg(cmd_string);
 
             let cmd_return = cmd.output().expect("Couldn't add git remote");
-            println!("{:#?}", cmd_return);
+            log_command(v, &cmd_return, "Git add remote");
         }
     }
 
@@ -258,6 +268,17 @@ fn get_file_name(p: &Path) -> Option<String> {
     let s = f.to_str()?;
 
     Some(String::from(s))
+}
+
+
+fn log_command(v: bool, cmd_return: &Output, message: &str) {
+    if v {
+        println!("{} returned with:\n\t{}\n\tstdout: {}\n\tstderr: {}",
+                message, 
+                cmd_return.status,
+                str::from_utf8(&cmd_return.stdout).unwrap(),
+                str::from_utf8(&cmd_return.stderr).unwrap());
+    }
 }
 
 

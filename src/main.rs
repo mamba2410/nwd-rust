@@ -14,6 +14,18 @@ use std::process::Command;
 use std::process::Output;
 use regex::Regex;
 
+
+struct Flags<'a> {
+    language: &'a String,
+    license: Option<&'a String>,
+    init_git: bool,
+    init_files: bool,
+    init_docs: bool,
+    v: bool,
+    git_remote: Option<&'a String>,
+}
+
+
 fn main() {
 
     let args: Vec<String> = env::args().collect();
@@ -42,6 +54,16 @@ fn main() {
     let mut v: bool = false;
     let mut git_remote: Option<&String> = None;
 
+    let mut pf = Flags {
+        language: &String::from("c"),
+        license: None,
+        init_git: false,
+        init_files: true,
+        init_docs: true,
+        v: false,
+        git_remote: None,
+    };
+
 
     // Argument loop
     // TODO: be able to combine args in one flag
@@ -53,36 +75,43 @@ fn main() {
             "-l"|"--language"   => {
                 if args_vec.peek().is_some() {
                     language = &args_vec.next().unwrap();
+                    pf.language = &args_vec.next().unwrap();
                     //println!("Language set: {}", language);
                 }
             },
             "-L"|"--license"    => {
                 if args_vec.peek().is_some() {
                     license = args_vec.next();
+                    pf.license = args_vec.next();
                     //println!("License set: {}", license.unwrap());
                 }
             },
             "-g"|"--init-git"   => {
                 init_git = true;
+                pf.init_git = true;
                 //println!("Git init set: {}", init_git);
             },
             "-I"|"--no-init-files" => {
                 init_files = false;
+                pf.init_files = false;
                 //println!("Files init set: {}", init_files);
             },
             "-r"|"--git-remote" => {
                 if args_vec.peek().is_some() {
                     git_remote = args_vec.next();
+                    pf.git_remote = args_vec.next();
                     //println!("Git remote set: {}", git_remote.unwrap());
                 }
             },
             "-D"|"--no-init-docs"  => {
                 init_docs = false;
+                pf.init_docs = false;
                 //println!("Docs init set: {}", init_docs);
             },
             "-v"|"--verbose"        => {
                 // TODO: change to u8 and have different levels of verbose
                 v = true;
+                pf.v = true;
             },
             _   => {
                 println!("Unrecognised argument '{}'", arg);
@@ -100,7 +129,7 @@ fn main() {
     let license_home = program_home.join("licenses");
     let docs_home = program_home.join("docs");
 
-    if v { println!("nwd home set to: {}", program_home.to_str().unwrap()); }
+    if pf.v { println!("nwd home set to: {}", program_home.to_str().unwrap()); }
 
     if ! language_home.exists() {
         println!("Language home does not exist. Please copy your data over to '{}'",
@@ -116,7 +145,7 @@ fn main() {
         languages.push(file_name);
     }
 
-    if v {
+    if pf.v {
         println!("Available languages:");
         for l in languages.iter() {
             println!("\t{}", l);

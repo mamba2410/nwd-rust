@@ -23,6 +23,8 @@ struct Flags<'a> {
     init_docs: bool,
     v: bool,
     git_remote: Option<&'a String>,
+    program_home: Option<&'a Path>,
+    project_path: Option<&'a Path>,
 }
 
 
@@ -46,13 +48,13 @@ fn main() {
 
 
     // Default flags
-    let mut language: &String = &String::from("c");
-    let mut license: Option<&String> = None;
-    let mut init_git: bool = false;
-    let mut init_files: bool = true;
-    let mut init_docs: bool = true;
-    let mut v: bool = false;
-    let mut git_remote: Option<&String> = None;
+    //let mut language: &String = &String::from("c");
+    //let mut license: Option<&String> = None;
+    //let mut init_git: bool = false;
+    //let mut init_files: bool = true;
+    //let mut init_docs: bool = true;
+    //let mut v: bool = false;
+    //let mut git_remote: Option<&String> = None;
 
     let mut pf = Flags {
         language: &String::from("c"),
@@ -62,6 +64,8 @@ fn main() {
         init_docs: true,
         v: false,
         git_remote: None,
+        program_home: None,
+        project_path: None,
     };
 
 
@@ -74,43 +78,43 @@ fn main() {
         match arg.as_str() {
             "-l"|"--language"   => {
                 if args_vec.peek().is_some() {
-                    language = &args_vec.next().unwrap();
+                    //language = &args_vec.next().unwrap();
                     pf.language = &args_vec.next().unwrap();
                     //println!("Language set: {}", language);
                 }
             },
             "-L"|"--license"    => {
                 if args_vec.peek().is_some() {
-                    license = args_vec.next();
+                    //license = args_vec.next();
                     pf.license = args_vec.next();
                     //println!("License set: {}", license.unwrap());
                 }
             },
             "-g"|"--init-git"   => {
-                init_git = true;
+                //init_git = true;
                 pf.init_git = true;
                 //println!("Git init set: {}", init_git);
             },
             "-I"|"--no-init-files" => {
-                init_files = false;
+                //init_files = false;
                 pf.init_files = false;
                 //println!("Files init set: {}", init_files);
             },
             "-r"|"--git-remote" => {
                 if args_vec.peek().is_some() {
-                    git_remote = args_vec.next();
+                    //git_remote = args_vec.next();
                     pf.git_remote = args_vec.next();
                     //println!("Git remote set: {}", git_remote.unwrap());
                 }
             },
             "-D"|"--no-init-docs"  => {
-                init_docs = false;
+                //init_docs = false;
                 pf.init_docs = false;
                 //println!("Docs init set: {}", init_docs);
             },
             "-v"|"--verbose"        => {
                 // TODO: change to u8 and have different levels of verbose
-                v = true;
+                //v = true;
                 pf.v = true;
             },
             _   => {
@@ -122,15 +126,17 @@ fn main() {
 
 
     // Set home for languages etc
-    let user_home = &dirs::home_dir().unwrap();
-    let program_home = &dirs::data_dir().unwrap().join("nwd");
-    let common_home = program_home.join("common");
-    let language_home = program_home.join("languages");
-    let license_home = program_home.join("licenses");
-    let docs_home = program_home.join("docs");
+    //let user_home = &dirs::home_dir().unwrap();
+    let program_home = dirs::data_dir().unwrap().join("nwd");
+    //pf.program_home = Some(&dirs::data_dir().unwrap().join("nwd"));
+    pf.program_home = Some(&program_home);
+    // TODO: remove these or move them to somewhere more relevant. They don't need such a long
+    // lifetime
 
-    if pf.v { println!("nwd home set to: {}", program_home.to_str().unwrap()); }
+    if pf.v { println!("nwd home set to: {}", pf.program_home.unwrap().to_str().unwrap()); }
 
+
+    let language_home = pf.program_home.unwrap().join("languages");
     if ! language_home.exists() {
         println!("Language home does not exist. Please copy your data over to '{}'",
                  language_home.to_str().unwrap());
@@ -138,13 +144,7 @@ fn main() {
     }
 
     // Get available languages
-    let mut languages: Vec<String> = Vec::new();
-    for entry in fs::read_dir(&language_home).unwrap() {
-        let path: &Path = &entry.unwrap().path();
-        let file_name = get_file_name(path).unwrap();
-        languages.push(file_name);
-    }
-
+    let languages: Vec<String> = ls_dir(&language_home);
     if pf.v {
         println!("Available languages:");
         for l in languages.iter() {
@@ -153,20 +153,22 @@ fn main() {
     }
 
     // Check if language is valid
-    if ! languages.iter().any(|l| &l == &language) {
-        println!("Language {} not valid", language);
+    if ! languages.iter().any(|l| &l == &pf.language) {
+        println!("Language {} not valid", pf.language);
         process::exit(1);
     }
 
-    // Get available licences
-    let mut licenses: Vec<String> = Vec::new();
-    for entry in fs::read_dir(&license_home).unwrap() {
-        let path: &Path = &entry.unwrap().path();
-        let file_name = get_file_name(path).unwrap();
-        licenses.push(file_name);
-    }
 
-    if v {
+    { // Licenses
+    let license_home = program_home.join("licenses");
+    if ! license_home.exists() {
+        println!("License home does not exist. Please copy your data over to '{}'",
+                 license_home.to_str().unwrap());
+        process::exit(1);
+    }
+    // Get available licences
+    let licenses: Vec<String> = ls_dir(&license_home);
+    if pf.v {
         println!("Available licenses:");
         for l in licenses.iter() {
             println!("\t{}", l);
@@ -174,26 +176,28 @@ fn main() {
     }
     
     // Check if license is valid
-    if license.is_some() {
-        let license = license.unwrap();
-        if ! licenses.iter().any(|l| &l == &license) {
-            println!("License {} not valid", license);
+    if pf.license.is_some() {
+        //let license = license.unwrap();
+        if ! licenses.iter().any(|l| &l == &pf.license.unwrap()) {
+            println!("License {} not valid", pf.license.unwrap());
             process::exit(1);
         }
     }
+    } // Licenses
 
     // Check if directory can be made
-    let project_path = &env::current_dir().expect("Cannot get current dir").join(project_name);
-    if project_path.exists() {
+    let project_path =env::current_dir().expect("Cannot get current dir").join(project_name);
+    pf.project_path = Some(&project_path);
+    if pf.project_path.unwrap().exists() {
         println!("Project path exists!");
         process::exit(1);
     }
     
-    if v { println!("Project path: {}", project_path.to_str().unwrap()); }
+    if pf.v { println!("Project path: {}", pf.project_path.unwrap().to_str().unwrap()); }
 
     // Create dir and cd to it
-    match fs::create_dir(project_path) {
-        Ok(_)   => env::set_current_dir(project_path).expect("Unable to change directory!"),
+    match fs::create_dir(pf.project_path.unwrap()) {
+        Ok(_)   => env::set_current_dir(pf.project_path.unwrap()).expect("Unable to change directory!"),
         Err(_)  => {
             println!("Couldn't make new project directory!");
             process::exit(1);
@@ -201,16 +205,16 @@ fn main() {
     };
 
     // Create tree
-    let tree_dirs = fs::read_to_string(program_home.join("dirs.txt"))
+    let tree_dirs = fs::read_to_string(pf.program_home.unwrap().join("dirs.txt"))
         .expect("Couldn't create directory tree");
     
 
-    if v { println!("Creating tree: "); }
+    if pf.v { println!("Creating tree: "); }
     for dir in tree_dirs.lines() {
         if dir.len() < 1 { continue; }
-        let path = &project_path.join(dir);
+        let path = &pf.project_path.unwrap().join(dir);
         match fs::create_dir(path) {
-            Ok(_)   => { if v { println!("\t{}", path.to_str().unwrap())} },
+            Ok(_)   => { if pf.v { println!("\t{}", path.to_str().unwrap())} },
             Err(_)  => {
                 println!("Could not create {} in directory tree", dir);
                 process::exit(1);
@@ -219,72 +223,76 @@ fn main() {
     }
 
     // Copy docs
-    if init_docs {
-        copy_docs(v, program_home, project_path)
+    if pf.init_docs {
+        copy_docs(pf.v, pf.program_home.unwrap(), pf.project_path.unwrap())
             .expect("Copying docs failed");
     }
 
-    if v { println!("Copying readme"); }
-    fs::copy(program_home.join("docs/README.md"), project_path.join("README.md"))
+    if pf.v { println!("Copying readme"); }
+    fs::copy(pf.program_home.unwrap().join("docs/README.md"), pf.project_path.unwrap().join("README.md"))
         .expect("Can't copy README!");
 
-    if license.is_some() {
-        if v { println!("Copying license {}", license.unwrap()); }
-        fs::copy(program_home.join("licenses").join(&license.unwrap()), project_path.join("LICENSE.md"))
+    if pf.license.is_some() {
+        if pf.v { println!("Copying license {}", pf.license.unwrap()); }
+        fs::copy(pf.program_home.unwrap().join("licenses").join(&pf.license.unwrap()),
+            pf.project_path.unwrap().join("LICENSE.md"))
             .expect("Can't copy license!");
     }
 
     // Change docs
     // TODO: bug when passing in -D flag, separate license and readme from docs
-    if v { println!("Modifying docs"); } 
-    match sed_docs(&project_path, "PROJECT_NAME", &project_name) {
-        Ok(())    => {},
+    if pf.v { println!("Modifying docs"); } 
+    match sed_docs(&pf.project_path.unwrap(), "PROJECT_NAME", &project_name) {
+        Ok(())  => {},
         Err(e)  => {
             println!("{:#?}", e);
             process::exit(1);
         },
     }
 
+    let common_home = program_home.join("common");
+    let docs_home = program_home.join("docs");
+
     // Call language bash script
-    let do_init = if init_files {"1"} else {"0"};
-    let script = String::from( language_home.join(&language).join("specifics.sh").to_str().unwrap() );
+    let do_init = if pf.init_files {"1"} else {"0"};
+    let script = String::from( language_home.join(&pf.language).join("specifics.sh").to_str().unwrap() );
     let script = format!("{s} {h} {n} {i}", 
-                    s=script, h=program_home.to_str().unwrap(), n=project_name, i=do_init);
-    if v { println!("Calling language bash script {}", script); }
+                    s=script, h=pf.program_home.unwrap().to_str().unwrap(), n=project_name, i=do_init);
+    if pf.v { println!("Calling language bash script {}", script); }
     let mut script_cmd = Command::new("sh");
     script_cmd.arg("-c").arg(&script);
     let script_return = script_cmd.output().expect("More shit broke");
-    log_command(v, &script_return, "Language script");
+    log_command(pf.v, &script_return, "Language script");
     
 
     // check and init git
-    if init_git {
-        if v { println!("Initialising git"); }
+    if pf.init_git {
+        if pf.v { println!("Initialising git"); }
         let cmd_return = Command::new("sh").arg("-c").arg("git init .")
             .output().expect("Couldn't initialise git repo");
-        log_command(v, &cmd_return, "Git init");
+        log_command(pf.v, &cmd_return, "Git init");
 
         let cmd_return = Command::new("sh").arg("-c").arg("git add .")
             .output().expect("Couldn't add git files");
-        log_command(v, &cmd_return, "Git add");
+        log_command(pf.v, &cmd_return, "Git add");
 
         let cmd_return = Command::new("sh").arg("-c").arg("git commit -m \"Initial commit\"")
             .output().expect("Couldn't make first commit");
-        log_command(v, &cmd_return, "Git commit");
+        log_command(pf.v, &cmd_return, "Git commit");
 
     }
 
     // check and set remote
-    if git_remote.is_some() {
-        if ! init_git { println!("Can't add repo if git isn't initialised! Skipping"); }
+    if pf.git_remote.is_some() {
+        if ! pf.init_git { println!("Can't add repo if git isn't initialised! Skipping"); }
         else {
-            if v { println!("Adding git remote {} as origin", git_remote.unwrap()); }
-            let cmd_string = String::from("git remote add origin ") + git_remote.unwrap();
+            if pf.v { println!("Adding git remote {} as origin", pf.git_remote.unwrap()); }
+            let cmd_string = String::from("git remote add origin ") + pf.git_remote.unwrap();
             let mut cmd = Command::new("sh");
             cmd.arg("-c").arg(cmd_string);
 
             let cmd_return = cmd.output().expect("Couldn't add git remote");
-            log_command(v, &cmd_return, "Git add remote");
+            log_command(pf.v, &cmd_return, "Git add remote");
         }
     }
 
@@ -310,6 +318,17 @@ fn log_command(v: bool, cmd_return: &Output, message: &str) {
     }
 }
 
+
+fn ls_dir(path: &Path) -> Vec<String> {
+    let mut files: Vec<String> = Vec::new();
+    for entry in fs::read_dir(&path).unwrap() {
+        let fpath: &Path = &entry.unwrap().path();
+        let file_name = get_file_name(fpath).unwrap();
+        files.push(file_name);
+    }
+
+    files
+}
 
 
 // TODO: combine copy and sed

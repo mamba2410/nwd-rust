@@ -41,21 +41,13 @@ fn main() {
     let project_name = &args[1];
 
     // verify with regex
-    let name_regex = Regex::new(r"^[0-9A-Za-z][-0-9A-Za-z\.]*$").unwrap();
+    let name_regex = Regex::new(r"^[_0-9A-Za-z][-_0-9A-Za-z\.]*$").unwrap();
     if !name_regex.is_match(&project_name) {
         exit_usage();
     }
 
 
     // Default flags
-    //let mut language: &String = &String::from("c");
-    //let mut license: Option<&String> = None;
-    //let mut init_git: bool = false;
-    //let mut init_files: bool = true;
-    //let mut init_docs: bool = true;
-    //let mut v: bool = false;
-    //let mut git_remote: Option<&String> = None;
-
     let mut pf = Flags {
         language: &String::from("c"),
         license: None,
@@ -126,13 +118,10 @@ fn main() {
 
 
     // Set home for languages etc
-    //let user_home = &dirs::home_dir().unwrap();
     let program_home = dirs::data_dir().unwrap().join("nwd");
-    //pf.program_home = Some(&dirs::data_dir().unwrap().join("nwd"));
     pf.program_home = Some(&program_home);
-    // TODO: remove these or move them to somewhere more relevant. They don't need such a long
-    // lifetime
 
+    // TODO: remove these or move them to somewhere more relevant
     if pf.v { println!("nwd home set to: {}", pf.program_home.unwrap().to_str().unwrap()); }
 
 
@@ -185,9 +174,11 @@ fn main() {
     }
     } // Licenses
 
+
     // Check if directory can be made
-    let project_path =env::current_dir().expect("Cannot get current dir").join(project_name);
+    let project_path = env::current_dir().expect("Cannot get current dir").join(project_name);
     pf.project_path = Some(&project_path);
+
     if pf.project_path.unwrap().exists() {
         println!("Project path exists!");
         process::exit(1);
@@ -203,6 +194,7 @@ fn main() {
             process::exit(1);
         },
     };
+
 
     // Create tree
     let tree_dirs = fs::read_to_string(pf.program_home.unwrap().join("dirs.txt"))
@@ -222,15 +214,19 @@ fn main() {
         }
     }
 
+
     // Copy docs
     if pf.init_docs {
-        copy_docs(pf.v, pf.program_home.unwrap(), pf.project_path.unwrap())
-            .expect("Copying docs failed");
+        println!("Copying and modifying docs");
+        copy_and_sed_docs(pf.v, pf.program_home.unwrap(), pf.project_path.unwrap(),
+            "PROJECT_NAME", &project_name)
+            .expect("Can't copy over docs");
     }
 
     if pf.v { println!("Copying readme"); }
-    fs::copy(pf.program_home.unwrap().join("docs/README.md"), pf.project_path.unwrap().join("README.md"))
-        .expect("Can't copy README!");
+    copy_and_sed(&pf.program_home.unwrap().join("docs/README.md"), &pf.project_path.unwrap().join("README"),
+        "PROJECT_NAME", &project_name)
+        .expect("Can't copy over readme");
 
     if pf.license.is_some() {
         if pf.v { println!("Copying license {}", pf.license.unwrap()); }
@@ -239,19 +235,6 @@ fn main() {
             .expect("Can't copy license!");
     }
 
-    // Change docs
-    // TODO: bug when passing in -D flag, separate license and readme from docs
-    if pf.v { println!("Modifying docs"); } 
-    match sed_docs(&pf.project_path.unwrap(), "PROJECT_NAME", &project_name) {
-        Ok(())  => {},
-        Err(e)  => {
-            println!("{:#?}", e);
-            process::exit(1);
-        },
-    }
-
-    let common_home = program_home.join("common");
-    let docs_home = program_home.join("docs");
 
     // Call language bash script
     let do_init = if pf.init_files {"1"} else {"0"};
@@ -299,7 +282,9 @@ fn main() {
 }
 
 
-
+/*
+ *  Get the file name from a &Path
+ */
 fn get_file_name(p: &Path) -> Option<String> {
     let f = p.file_name()?;
     let s = f.to_str()?;
@@ -308,6 +293,9 @@ fn get_file_name(p: &Path) -> Option<String> {
 }
 
 
+/*
+ *  Print shell command status, stdout and stderr
+ */
 fn log_command(v: bool, cmd_return: &Output, message: &str) {
     if v {
         println!("{} returned with:\n\t{}\n\tstdout: {}\n\tstderr: {}",
@@ -319,6 +307,10 @@ fn log_command(v: bool, cmd_return: &Output, message: &str) {
 }
 
 
+/*
+ *  List directory and return the names in a Vector
+ *  TODO: probably breaks if asked to list a file
+ */
 fn ls_dir(path: &Path) -> Vec<String> {
     let mut files: Vec<String> = Vec::new();
     for entry in fs::read_dir(&path).unwrap() {
@@ -331,8 +323,12 @@ fn ls_dir(path: &Path) -> Vec<String> {
 }
 
 
-// TODO: combine copy and sed
-fn copy_docs(v: bool, src_home: &Path, dst_home: &Path) -> std::io::Result<()> {
+/*
+ *  Take docs from `src_home`, replace the token with a given string, then
+ *  place them in the `dst_home`
+ */
+fn copy_and_sed_docs(v: bool, src_home: &Path, dst_home: &Path, replace_token: &str, replace_str: &str) -> std::io::Result<()> {
+    let docs_src = src_home.join("docs/");
     let docs_dst = dst_home.join("docs/");
 
     if v { println!("Copying docs to: {}", docs_dst.to_str().unwrap()); }
@@ -343,39 +339,31 @@ fn copy_docs(v: bool, src_home: &Path, dst_home: &Path) -> std::io::Result<()> {
     }
 
 
-    // TODO: Make nicer, maybe a docs file like dirs.txt
-    fs::copy(src_home.join("docs/DESIGN.md"), dst_home.join("docs/DESIGN.md"))?;
-    fs::copy(src_home.join("docs/ISSUES.md"), dst_home.join("docs/ISSUES.md"))?;
-    fs::copy(src_home.join("docs/MANUAL.md"), dst_home.join("docs/MANUAL.md"))?;
-    fs::copy(src_home.join("docs/TODO.md"),   dst_home.join("docs/TODO.md"))?;
-
-
+    copy_and_sed(&docs_src.join("DESIGN.md"), &docs_dst.join("DESIGN.md"), replace_token, replace_str)?;
+    copy_and_sed(&docs_src.join("ISSUES.md"), &docs_dst.join("ISSUES.md"), replace_token, replace_str)?;
+    copy_and_sed(&docs_src.join("MANUAL.md"), &docs_dst.join("MANUAL.md"), replace_token, replace_str)?;
+    copy_and_sed(&docs_src.join("TODO.md"),   &docs_dst.join("TODO.md"),   replace_token, replace_str)?;
+    
     Ok(())
 }
 
 
-
-fn sed_docs(project_home: &Path, replace_token: &str, replace_str: &str) -> std::io::Result<()> {
-    let docs_dir: &Path = &project_home.join("docs/");
-
-    //sed_file(&project_home.join("README.md"), replace_token, replace_str)?;
-    sed_file(&docs_dir.join("DESIGN.md"), replace_token, replace_str)?;
-    sed_file(&docs_dir.join("ISSUES.md"), replace_token, replace_str)?;
-    sed_file(&docs_dir.join("MANUAL.md"), replace_token, replace_str)?;
-    sed_file(&docs_dir.join("TODO.md"), replace_token, replace_str)?;
-
-    Ok(())
-}
-
-fn sed_file(file: &Path, replace_token: &str, replace_str: &str) -> std::io::Result<()> {
-    let mut contents = fs::read_to_string(file)?;
+/*
+ *  Take a single file from `src`, replace all instances of `replace_token` with `replace_str` 
+ *  and write it to `dst`
+ */
+fn copy_and_sed(src: &Path, dst: &Path, replace_token: &str, replace_str: &str) -> std::io::Result<()> {
+    let mut contents = fs::read_to_string(src)?;
     contents = contents.replace(replace_token, replace_str);
-    fs::write(file, contents)?;
+    fs::write(dst, contents)?;
 
     Ok(())
 }
 
 
+/*
+ *  Exit and show usage
+ */
 fn exit_usage() {
     println!("
     Usage:

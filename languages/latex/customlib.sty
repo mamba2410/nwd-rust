@@ -1,0 +1,90 @@
+\NeedsTeXFormat{LaTeX2e}[1194/06/01]
+\ProvidesPackage{customlib}[Custom library for use with LaTeX]
+
+% All the packages required or normally used
+% Some may need to be installed by tlmgr install xxx
+\RequirePackage{mathtools}
+\RequirePackage{siunitx}
+\RequirePackage{graphicx}
+\RequirePackage{bm}
+%\RequirePackage{cite}
+\RequirePackage{multicol}
+\RequirePackage{caption}
+\RequirePackage{physics}
+\RequirePackage{esint}
+
+\newcommand\csettags{\numberwithin{equation}{section}}
+
+% Add a star and equation number next to an equation with this tag
+\newtagform{starred}[]{(}{*)}
+
+% Custom full title page
+\newcommand{\ctitlepage}[2]{{
+	\begin{titlepage}
+		\centering
+		{\upshape\Large #1\par}
+		\vspace{2cm}
+		{\upshape\large YOUR NAME \par}
+		\vspace{1.5cm}
+		{\upshape\large #2\par}
+		\vfill
+		{\small Last Revised: \today}
+	\end{titlepage}
+}}
+
+% Custom small title page or report title
+\newcommand{\csmalltitle}[1]{{
+	\begin{center}
+		{\upshape\bfseries \LARGE #1\par}
+		\vspace{0.25cm}
+		{\upshape YOUR NAME \par}
+		\vspace{0.25cm}
+		{\upshape YOUR ADDRESS \par}
+	\end{center}
+}}
+
+% Custom title page with title and contents
+\newcommand{\ctitlecontents}[2]{{
+	\begin{center}
+		{\upshape\Large #1 \par}
+		\vspace{0.25cm}
+		{\upshape\large YOUR NAME \par}
+		\vspace{0.25cm}
+		{\upshape\small Created #2, Last Revised \today\par}
+		\vspace{0.5cm}
+		\@starttoc{toc}
+	\end{center}
+	\newpage
+}}
+
+\newcommand{\Msun}{{M_{\odot}}}
+\newcommand{\Rsun}{{R_{\odot}}}
+\newcommand{\Lsun}{{L_{\odot}}}
+\newcommand{\Vsun}{{V_{\odot}}}
+
+\newcommand{\Mearth}{{M_{\oplus}}}
+\newcommand{\Rearth}{{R_{\oplus}}}
+
+\newcommand{\Mjup}{{M_{jup}}}
+\newcommand{\Rjup}{{R_{jup}}}
+
+\newcommand{\ix}{\vb{i}_x}
+\newcommand{\iy}{\vb{i}_y}
+\newcommand{\iz}{\vb{i}_z}
+\newcommand{\iR}{\vb{i}_R}
+\newcommand{\ir}{\vb{i}_r}
+\newcommand{\ith}{\vb{i}_\theta}
+\newcommand{\iph}{\vb{i}_\varphi}
+
+\newcommand{\lineint} [2][\vb{l}]{ \int #2 \cdot \dd{#1} }		% TODO: Add optional limits
+\newcommand{\clineint}[2][\vb{l}]{ \oint #2 \cdot \dd{#1} }
+\newcommand{\surfint} [2][\vb{S}]{ \iint #2 \cdot \dd{#1} }
+\newcommand{\csurfint}[2][\vb{S}]{ \oiint #2 \cdot \dd{#1} }
+\newcommand{\volint}  [2][V]{\iiint #2 \dd{#1} }
+
+\newenvironment{figmulticol}{
+  {\par\medskip\noindent\minipage{\linewidth}}
+  {\endminipage\par\medskip}
+}
+
+\endinput

@@ -1,0 +1,116 @@
+--- ../../common/Makefile	2020-09-26 21:02:27.039739357 +0100
++++ /home/callum/tmp/aaaaa/Makefile	2020-09-26 20:39:42.213779825 +0100
+@@ -1,11 +1,26 @@
+ ###########################################################################################################
+ # Compiler, flags and names
+ ###########################################################################################################
+-CC = gcc
+-LD = gcc
+-GLOBAL_CC_FLAGS =
+-GLOBAL_LD_FLAGS =
++CC = avr-gcc
++LD = avr-gcc
++OC = avr-objcopy
+ LIB_D = ./build/deps
++ARDUINO_D = /usr/lib/arduino
++ARDUINO_CORE_D = $(ARDUINO_D)/hardware/arduino/avr/cores/arduino
++
++# Customise for the chip/port etc
++TARGET			= mega
++CHIP			= atmega2560
++PORT			= /dev/ttyACM0
++PROGRAMMER		= wiring
++BAUDRATE		= 115200
++
++ARDUINO_TARGET_D = $(ARDUINO_D)/hardware/arduino/avr/variants/$(TARGET)
++GLOBAL_CC_FLAGS = -mmcu=$(CHIP)
++GLOBAL_LD_FLAGS = -mmcu=$(CHIP)
++GLOBAL_OC_FLAGS = -R .eeprom
++AVRDUDE_FLAGS	= -p $(CHIP) -c $(PROGRAMMER) -b $(BAUDRATE) -P $(PORT) -v -D
++# May need "-F -V" to stop verification after upload
+ 
+ ###########################################################################################################
+ # Makefile includes
+@@ -17,22 +32,54 @@
+ # Main recipe
+ ###########################################################################################################
+ 
+-MAIN_BIN 		= a.exe
+-MAIN_CC_FLAGS	= $(GLOBAL_CC_FLAGS)
+-MAIN_LD_FLAGS	= $(GLOBAL_LD_FLAGS) -L'$(LIB_D)' -Wl,-rpath='$(LIB_D)'
++
++MAIN_OUT		= ./build/target/a
++MAIN_CC_FLAGS	= $(GLOBAL_CC_FLAGS) -DF_CPU=16000000UL -Os
++MAIN_LD_FLAGS	= $(GLOBAL_LD_FLAGS) -L$(MAIN_SLIB_D) -lcore
++MAIN_OC_FLAGS	= $(GLOBAL_OC_FLAGS) -O ihex
++MAIN_INC_FLAGS	= -I$(ARDUINO_CORE_D) -I$(ARDUINO_TARGET_D)
+ MAIN_SRC_D		= ./src
+-MAIN_INC_D		= ./include
++MAIN_INC_D		= ./src
+ MAIN_OBJ_D		= ./build/target/objects
+ MAIN_SLIB_D		= ./build/target/libstatic
+-MAIN_C_SRC		= $(wildcard $(MAIN_SRC_D)/*.c)
++MAIN_INO_CPP_D	= /tmp
++MAIN_CPP_SRC	= $(wildcard $(MAIN_SRC_D)/*.cpp)
++MAIN_INO_SRC	= $(wildcard $(MAIN_SRC_D)/*.ino)
+ MAIN_INC		= $(wildcard $(MAIN_INC_D)/*.h)
+-MAIN_C_OBJ		= $(patsubst $(MAIN_SRC_D)/%.c, $(MAIN_OBJ_D)/%_c.o, $(MAIN_C_SRC))
++MAIN_CPP_OBJ	= $(patsubst $(MAIN_SRC_D)/%.cpp, $(MAIN_OBJ_D)/%_cpp.o, $(MAIN_CPP_SRC))
++MAIN_INO_OBJ	= $(patsubst $(MAIN_SRC_D)/%.ino, $(MAIN_OBJ_D)/%_ino.o, $(MAIN_INO_SRC))
++
++$(MAIN_OBJ_D)/%_cpp.o:	$(MAIN_SRC_D)/%.cpp
++	$(CC) $(MAIN_CC_FLAGS) -I'$(MAIN_INC_D)' $(MAIN_INC_FLAGS) -c $< -o $@ 
++
++$(MAIN_INO_CPP_D)/%_ino.cpp: $(MAIN_SRC_D)/%.ino
++	sed '1i #include <Arduino.h>' $<  > $@
++
++$(MAIN_OBJ_D)/%_ino.o: $(MAIN_INO_CPP_D)/%_ino.cpp
++	$(CC) $(MAIN_CC_FLAGS) -I'$(MAIN_INC_D)' $(MAIN_INC_FLAGS) -c $< -o $@ 
++
++
++CORE_BIN		= $(MAIN_SLIB_D)/libcore.a
++CORE_SRC		= $(wildcard $(ARDUINO_CORE_D)/*.cpp)
++CORE_SRC		+= $(wildcard $(ARDUINO_CORE_D)/*.c)
++CORE_OBJ		= $(patsubst $(ARDUINO_CORE_D)/%.cpp, $(MAIN_OBJ_D)/core_%_cpp.o, $(CORE_SRC))
++CORE_OBJ		+= $(patsubst $(ARDUINO_CORE_D)/%.c, $(MAIN_OBJ_D)/core_%_c.o, $(CORE_SRC))
++
++
++$(MAIN_OBJ_D)/core_%_cpp.o: $(ARDUINO_CORE_D)/%.cpp
++	$(CC) $(MAIN_CC_FLAGS) -I$(ARDUINO_CORE_D) -I$(ARDUINO_TARGET_D) -c $< -o $@
++
++$(MAIN_OBJ_D)/core_%_c.o: $(ARDUINO_CORE_D)/%.c
++	$(CC) $(MAIN_CC_FLAGS) -I$(ARDUINO_CORE_D) -I$(ARDUINO_TARGET_D) -c $< -o $@
++
++$(CORE_BIN): $(CORE_OBJ)
++	avr-ar rcs $(CORE_BIN) $(CORE_OBJ)
++
+ 
+-$(MAIN_OBJ_D)/%_c.o:	$(MAIN_SRC_D)/%.c
+-	$(CC) $(MAIN_CC_FLAGS) -I'$(MAIN_INC_D)' -c $< -o $@ 
++main: $(MAIN_CPP_OBJ) $(MAIN_INO_OBJ) $(MAIN_INC_D) $(CORE_BIN)
++	$(LD) $(MAIN_CPP_OBJ) $(MAIN_INO_OBJ) $(MAIN_LD_FLAGS) -o $(MAIN_OUT).elf
++	$(OC) $(MAIN_OC_FLAGS) $(MAIN_OUT).elf $(MAIN_OUT).hex
+ 
+-main: $(MAIN_C_OBJ) $(MAIN_INC) # Add any libraries here
+-	$(LD) $(MAIN_C_OBJ) $(MAIN_LD_FLAGS) -o $(MAIN_BIN)
+ 
+ ###########################################################################################################
+ # General recipes
+@@ -44,14 +91,13 @@
+ 	@echo "Build complete"
+ 
+ # Recipe for running, just builds and executes the binary
+-run: build
+-	@echo ""	
+-	@./$(MAIN_BIN)
++upload: build
++	avrdude $(AVRDUDE_FLAGS) -U flash:w:$(MAIN_OUT).hex:i
+ 
+ # Recipe for cleaning. Removes all objects and binaries
+ clean:
+ 	rm -rf $(MAIN_OBJ_D)/*.o
+-	[ -f "$(MAIN_BIN)" ] && rm $(MAIN_BIN)
++	rm $(MAIN_OUT).*
+ 	@echo ""
+ 
+ # Recipe for rebuilding. Just an easy way to run "make clean; make build"

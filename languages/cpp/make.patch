@@ -1,0 +1,34 @@
+--- ../Makefile	2020-11-24 20:33:05.927128202 +0000
++++ Makefile	2020-11-24 20:31:56.510679117 +0000
+@@ -1,8 +1,8 @@
+ ###########################################################################################################
+ # Compiler, flags and names
+ ###########################################################################################################
+-CC = gcc
+-LD = gcc
++CC = g++
++LD = g++
+ GLOBAL_CC_FLAGS =
+ GLOBAL_LD_FLAGS =
+ LIB_D = ./build/deps
+@@ -24,15 +24,15 @@
+ MAIN_INC_D		= ./include
+ MAIN_OBJ_D		= ./build/target/objects
+ MAIN_SLIB_D		= ./build/target/libstatic
+-MAIN_C_SRC		= $(wildcard $(MAIN_SRC_D)/*.c)
++MAIN_CPP_SRC	= $(wildcard $(MAIN_SRC_D)/*.cpp)
+ MAIN_INC		= $(wildcard $(MAIN_INC_D)/*.h)
+-MAIN_C_OBJ		= $(patsubst $(MAIN_SRC_D)/%.c, $(MAIN_OBJ_D)/%_c.o, $(MAIN_C_SRC))
++MAIN_CPP_OBJ	= $(patsubst $(MAIN_SRC_D)/%.cpp, $(MAIN_OBJ_D)/%_cpp.o, $(MAIN_CPP_SRC))
+ 
+-$(MAIN_OBJ_D)/%_c.o:	$(MAIN_SRC_D)/%.c
++$(MAIN_OBJ_D)/%_cpp.o:	$(MAIN_SRC_D)/%.cpp
+ 	$(CC) $(MAIN_CC_FLAGS) -I'$(MAIN_INC_D)' -c $< -o $@ 
+ 
+-main: $(MAIN_C_OBJ) $(MAIN_INC) # Add any libraries here
+-	$(LD) $(MAIN_C_OBJ) $(MAIN_LD_FLAGS) -o $(MAIN_BIN)
++main: $(MAIN_CPP_OBJ) $(MAIN_INC) # Add any libraries here
++	$(LD) $(MAIN_CPP_OBJ) $(MAIN_LD_FLAGS) -o $(MAIN_BIN)
+ 
+ ###########################################################################################################
+ # General recipes

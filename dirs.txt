@@ -1,0 +1,11 @@
+build/
+build/deps/
+build/logs/
+build/metadata/
+build/target/
+build/target/libstatic/
+build/target/objects/
+docs/
+include/
+src/
+

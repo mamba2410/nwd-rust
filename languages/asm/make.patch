@@ -1,0 +1,44 @@
+--- ../../common/Makefile	2020-09-26 21:02:27.039739357 +0100
++++ Makefile	2020-10-20 16:06:18.920820522 +0100
+@@ -1,9 +1,9 @@
+ ###########################################################################################################
+ # Compiler, flags and names
+ ###########################################################################################################
+-CC = gcc
++AS = gcc
+ LD = gcc
+-GLOBAL_CC_FLAGS =
++GLOBAL_AS_FLAGS =
+ GLOBAL_LD_FLAGS =
+ LIB_D = ./build/deps
+ 
+@@ -18,21 +18,21 @@
+ ###########################################################################################################
+ 
+ MAIN_BIN 		= a.exe
+-MAIN_CC_FLAGS	= $(GLOBAL_CC_FLAGS)
+-MAIN_LD_FLAGS	= $(GLOBAL_LD_FLAGS) -L'$(LIB_D)' -Wl,-rpath='$(LIB_D)'
++MAIN_AS_FLAGS	= $(GLOBAL_AS_FLAGS)
++MAIN_LD_FLAGS	= $(GLOBAL_LD_FLAGS)
+ MAIN_SRC_D		= ./src
+ MAIN_INC_D		= ./include
+ MAIN_OBJ_D		= ./build/target/objects
+ MAIN_SLIB_D		= ./build/target/libstatic
+-MAIN_C_SRC		= $(wildcard $(MAIN_SRC_D)/*.c)
++MAIN_S_SRC		= $(wildcard $(MAIN_SRC_D)/*.S)
+ MAIN_INC		= $(wildcard $(MAIN_INC_D)/*.h)
+-MAIN_C_OBJ		= $(patsubst $(MAIN_SRC_D)/%.c, $(MAIN_OBJ_D)/%_c.o, $(MAIN_C_SRC))
++MAIN_S_OBJ		= $(patsubst $(MAIN_SRC_D)/%.S, $(MAIN_OBJ_D)/%_S.o, $(MAIN_S_SRC))
+ 
+-$(MAIN_OBJ_D)/%_c.o:	$(MAIN_SRC_D)/%.c
+-	$(CC) $(MAIN_CC_FLAGS) -I'$(MAIN_INC_D)' -c $< -o $@ 
++$(MAIN_OBJ_D)/%_S.o:	$(MAIN_SRC_D)/%.S
++	$(AS) $(MAIN_AS_FLAGS) -I'$(MAIN_INC_D)' -c $< -o $@ 
+ 
+-main: $(MAIN_C_OBJ) $(MAIN_INC) # Add any libraries here
+-	$(LD) $(MAIN_C_OBJ) $(MAIN_LD_FLAGS) -o $(MAIN_BIN)
++main: $(MAIN_S_OBJ) $(MAIN_INC) # Add any libraries here
++	$(LD) $(MAIN_S_OBJ) $(MAIN_LD_FLAGS) -o $(MAIN_BIN)
+ 
+ ###########################################################################################################
+ # General recipes

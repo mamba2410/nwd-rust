@@ -1,0 +1,70 @@
+--- ../Makefile	2020-11-24 20:49:44.296060206 +0000
++++ Makefile	2020-11-24 20:52:15.307185081 +0000
+@@ -1,11 +1,11 @@
+ ###########################################################################################################
+ # Compiler, flags and names
+ ###########################################################################################################
+-CC = gcc
+-LD = gcc
++CC = gfortran
++LD = gfortran
+ GLOBAL_CC_FLAGS =
+ GLOBAL_LD_FLAGS =
+-LIB_D = ./build/deps
++MODULES_D = ./build/target/modules
+ 
+ ###########################################################################################################
+ # Makefile includes
+@@ -17,22 +17,35 @@
+ # Main recipe
+ ###########################################################################################################
+ 
++# Modules recipe
++MODULES_CC_FLAGS	= $(GLOBAL_CC_FLAGS) -J'$(MODULES_D)'
++MODULES_SRC_D		= ./src/modules
++MODULES_OBJ_D		= ./bin/objects
++MODULES_F90_SRC		= $(wildcard $(MODULES_SRC_D)/*.f90)
++MODULES_F90_OBJ		= $(patsubst $(MODULES_SRC_D)/%.f90, $(MODULES_OBJ_D)/%_f90.o, $(MODULES_F90_SRC))
++
++$(MODULES_OBJ_D)/%_f90.o:	$(MODULES_SRC_D)/%.f90
++	$(CC) $(MODULES_CC_FLAGS) -c $< -o $@ 
++
++modules: $(MODULES_F90_OBJ)
++
++# Main recipe
+ MAIN_BIN 		= a.exe
+-MAIN_CC_FLAGS	= $(GLOBAL_CC_FLAGS)
+-MAIN_LD_FLAGS	= $(GLOBAL_LD_FLAGS) -L'$(LIB_D)' -Wl,-rpath='$(LIB_D)'
++MAIN_CC_FLAGS	= $(GLOBAL_CC_FLAGS) -I'$(MODULES_D)'
++MAIN_LD_FLAGS	= $(GLOBAL_LD_FLAGS)
+ MAIN_SRC_D		= ./src
+ MAIN_INC_D		= ./include
+ MAIN_OBJ_D		= ./build/target/objects
+ MAIN_SLIB_D		= ./build/target/libstatic
+-MAIN_C_SRC		= $(wildcard $(MAIN_SRC_D)/*.c)
++MAIN_F90_SRC	= $(wildcard $(MAIN_SRC_D)/*.f90)
+ MAIN_INC		= $(wildcard $(MAIN_INC_D)/*.h)
+-MAIN_C_OBJ		= $(patsubst $(MAIN_SRC_D)/%.c, $(MAIN_OBJ_D)/%_c.o, $(MAIN_C_SRC))
+-
+-$(MAIN_OBJ_D)/%_c.o:	$(MAIN_SRC_D)/%.c
+-	$(CC) $(MAIN_CC_FLAGS) -I'$(MAIN_INC_D)' -c $< -o $@ 
++MAIN_F90_OBJ	= $(patsubst $(MAIN_SRC_D)/%.f90, $(MAIN_OBJ_D)/%_f90.o, $(MAIN_F90_SRC))
+ 
+-main: $(MAIN_C_OBJ) $(MAIN_INC) # Add any libraries here
+-	$(LD) $(MAIN_C_OBJ) $(MAIN_LD_FLAGS) -o $(MAIN_BIN)
++$(MAIN_OBJ_D)/%_f90.o:	$(MAIN_SRC_D)/%.f90
++	$(CC) $(MAIN_CC_FLAGS) -c $< -o $@ 
++ 
++main: modules $(MAIN_F90_OBJ)
++	$(LD) $(MAIN_F90_OBJ) $(MODULES_F90_OBJ) $(MAIN_LD_FLAGS) -o $(MAIN_BIN)
+ 
+ ###########################################################################################################
+ # General recipes
+@@ -51,6 +64,7 @@
+ # Recipe for cleaning. Removes all objects and binaries
+ clean:
+ 	rm -rf $(MAIN_OBJ_D)/*.o
++	rm -rf $(MODULES_D)/*.mod
+ 	[ -f "$(MAIN_BIN)" ] && rm $(MAIN_BIN)
+ 	@echo ""
+ 

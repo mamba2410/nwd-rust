@@ -1,0 +1,48 @@
+\documentclass[a4paper]{report}
+\usepackage[a4paper, margin=1.5cm]{geometry}
+\usepackage{customlib}
+
+% base directory for images is here
+\graphicspath{ {./images/} }
+
+%\usepackage[backend=biber,style=authoryear,citestyle=authoryear]{biblatex}
+%\addbibresource{references.bib}
+
+
+\begin{document}
+	% Title and contents page. Title, date
+	\ctitlecontents{<++>}{<++>}
+	
+	% Most revision notes will need constants and general info either about the topic or the course.
+	\chapter{Constants and Useful Information}
+		% Constants are aligned and numbered
+		% Remember it can be useful to label a constant or equation
+		\section{Constants}
+			\begin{align}
+				<++>
+			\end{align}
+
+		% Equations are aligned and numbered also
+		\section{Equations}
+			\begin{align}
+				<++>
+			\end{align}
+		
+		% Secton for useful/background information
+		\section{Useful Information}
+			<++>
+	
+
+	% New chapter to start the actual contents of the notes, chapters are preferred to be in two columns
+	\chapter{<++>}
+	\begin{multicols}{2}
+		<++>
+		
+	\end{multicols}
+
+	\chapter{Derivations}
+		\section{<++>}
+			<++>
+		<++>
+
+\end{document}

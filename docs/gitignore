@@ -1,0 +1,5 @@
+*.exe
+build/target/*
+build/build_number
+
+

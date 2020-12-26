@@ -1,6 +1,4 @@
 
-#![allow(unused_assignments, unused_variables, dead_code)]
-
 extern crate dirs;
 extern crate regex;
 
@@ -43,6 +41,7 @@ fn main() {
     // verify with regex
     let name_regex = Regex::new(r"^[_0-9A-Za-z][-_0-9A-Za-z\.]*$").unwrap();
     if !name_regex.is_match(&project_name) {
+        println!("Project name '{}' not valid.", project_name);
         exit_usage();
     }
 
@@ -143,7 +142,8 @@ fn main() {
 
     // Check if language is valid
     if ! languages.iter().any(|l| &l == &pf.language) {
-        println!("Language {} not valid", pf.language);
+        println!("Language '{}' not valid. Valid languages are: ", pf.language);
+        for l in languages.iter() { println!("\t{}", l); }
         process::exit(1);
     }
 
@@ -166,9 +166,9 @@ fn main() {
     
     // Check if license is valid
     if pf.license.is_some() {
-        //let license = license.unwrap();
         if ! licenses.iter().any(|l| &l == &pf.license.unwrap()) {
-            println!("License {} not valid", pf.license.unwrap());
+            println!("License '{}' not valid. Available licenses are:", pf.license.unwrap());
+            for l in licenses.iter() { println!("\t{}", l); }
             process::exit(1);
         }
     }
@@ -217,7 +217,7 @@ fn main() {
 
     // Copy docs
     if pf.init_docs {
-        println!("Copying and modifying docs");
+        if pf.v { println!("Copying and modifying docs"); }
         copy_and_sed_docs(pf.v, pf.program_home.unwrap(), pf.project_path.unwrap(),
             "PROJECT_NAME", &project_name)
             .expect("Can't copy over docs");
@@ -367,6 +367,38 @@ fn copy_and_sed(src: &Path, dst: &Path, replace_token: &str, replace_str: &str) 
 fn exit_usage() {
     println!("
     Usage:
+        nwd <project-name> [options]
+
+    Options:
+        -l <language>, --language <language>
+            Specifies the language to use for the project.
+            Defaults to c.
+
+        -L <license>
+            Add the specified license file to the project.
+            Default none.
+
+        -I
+            Do not add init source files to the project.
+            Default creates init files.
+
+        -D 
+            Do not create docs other than README and optional license.
+            Default creates docs.
+
+        -g, --git
+            Initialises a git repo for the project and adds a gitignore.
+            Also creates an initial commit.
+            Default off.
+
+        -r <path/to/remote>, --remote <path/to/remote>
+            Specifies a remote git repository 
+            Default none.
+
+        -v 
+            Verbose, prints debug information about the process of
+            creating the project.
+            Default off.
     ");
 
     process::exit(1);

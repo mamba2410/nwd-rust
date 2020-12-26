@@ -41,11 +41,11 @@ $ mv nwd-rust $XDG_DATA_HOME/nwd
 Then add the `target/release/nwd` binary to a directory in your `$PATH` variable.
 For example:
 ```
-$ ln -s $XDG_DATA_HOME/nwd/target/release/nwd ~/.local/bin/nwd
+$ ln -s $XDG_DATA_HOME/nwd/target/release/nwd-rust ~/.local/bin/nwd
 ```
 
 ## Issues
-Currently not platform-independent since it still requires shell scripts to be run for each language.
+Maybe run into issues on Windows, not been tested much but appears to work okay when running from a shell such as git bash.
 
 
 ## Improvments

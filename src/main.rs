@@ -241,7 +241,7 @@ fn main() {
     // Call language bash script
     let do_init = if pf.init_files {"1"} else {"0"};
     let script = String::from( language_home.join(&pf.language).join("specifics.sh").to_str().unwrap() );
-    let script = format!("{s} {h} {n} {i}", 
+    let script = format!("\"{s}\" \"{h}\" {n} {i}", 
                     s=script, h=pf.program_home.unwrap().to_str().unwrap(), n=project_name, i=do_init);
     if pf.v { println!("Calling language bash script {}", script); }
     let mut script_cmd = Command::new("sh");

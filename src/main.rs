@@ -13,6 +13,7 @@ use std::process::Output;
 use regex::Regex;
 
 
+// Flag strusure for the program
 struct Flags<'a> {
     language: &'a String,
     license: Option<&'a String>,
@@ -29,11 +30,7 @@ struct Flags<'a> {
 fn main() {
 
     let args: Vec<String> = env::args().collect();
-    //println!("{:#?}", args);
-
-    if args.len() < 2 {
-        exit_usage();
-    }
+    if args.len() < 2 { exit_usage(); }
 
     // get name
     let project_name = &args[1];
@@ -69,43 +66,30 @@ fn main() {
         match arg.as_str() {
             "-l"|"--language"   => {
                 if args_vec.peek().is_some() {
-                    //language = &args_vec.next().unwrap();
                     pf.language = &args_vec.next().unwrap();
-                    //println!("Language set: {}", language);
                 }
             },
             "-L"|"--license"    => {
                 if args_vec.peek().is_some() {
-                    //license = args_vec.next();
                     pf.license = args_vec.next();
-                    //println!("License set: {}", license.unwrap());
                 }
             },
             "-g"|"--init-git"   => {
-                //init_git = true;
                 pf.init_git = true;
-                //println!("Git init set: {}", init_git);
             },
             "-I"|"--no-init-files" => {
-                //init_files = false;
                 pf.init_files = false;
-                //println!("Files init set: {}", init_files);
             },
             "-r"|"--git-remote" => {
                 if args_vec.peek().is_some() {
-                    //git_remote = args_vec.next();
                     pf.git_remote = args_vec.next();
-                    //println!("Git remote set: {}", git_remote.unwrap());
                 }
             },
             "-D"|"--no-init-docs"  => {
-                //init_docs = false;
                 pf.init_docs = false;
-                //println!("Docs init set: {}", init_docs);
             },
             "-v"|"--verbose"        => {
                 // TODO: change to u8 and have different levels of verbose
-                //v = true;
                 pf.v = true;
             },
             _   => {
@@ -119,11 +103,10 @@ fn main() {
     // Set home for languages etc
     let program_home = dirs::data_dir().unwrap().join("nwd");
     pf.program_home = Some(&program_home);
-
-    // TODO: remove these or move them to somewhere more relevant
     if pf.v { println!("nwd home set to: {}", pf.program_home.unwrap().to_str().unwrap()); }
 
 
+    // Get the language home and check if it exists
     let language_home = pf.program_home.unwrap().join("languages");
     if ! language_home.exists() {
         println!("Language home does not exist. Please copy your data over to '{}'",
@@ -155,6 +138,7 @@ fn main() {
                  license_home.to_str().unwrap());
         process::exit(1);
     }
+
     // Get available licences
     let licenses: Vec<String> = ls_dir(&license_home);
     if pf.v {
@@ -186,6 +170,7 @@ fn main() {
     
     if pf.v { println!("Project path: {}", pf.project_path.unwrap().to_str().unwrap()); }
 
+
     // Create dir and cd to it
     match fs::create_dir(pf.project_path.unwrap()) {
         Ok(_)   => env::set_current_dir(pf.project_path.unwrap()).expect("Unable to change directory!"),
@@ -199,7 +184,6 @@ fn main() {
     // Create tree
     let tree_dirs = fs::read_to_string(pf.program_home.unwrap().join("dirs.txt"))
         .expect("Couldn't create directory tree");
-    
 
     if pf.v { println!("Creating tree: "); }
     for dir in tree_dirs.lines() {
@@ -279,7 +263,7 @@ fn main() {
         }
     }
 
-}
+} // End of main
 
 
 /*

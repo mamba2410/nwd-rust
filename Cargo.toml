@@ -1,5 +1,5 @@
 [package]
-name = "nwd-rust-again"
+name = "nwd-rust"
 version = "0.1.0"
 authors = ["mamba2410 <callummcgregor54@gmail.com>"]
 edition = "2018"

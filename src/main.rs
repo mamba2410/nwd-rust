@@ -200,8 +200,13 @@ fn main() {
 
 
     // Create tree
-    let tree_dirs = fs::read_to_string(pf.program_home.unwrap().join("dirs.txt"))
+    let mut tree_dirs = fs::read_to_string(pf.program_home.unwrap().join("dirs.txt"))
         .expect("Couldn't create directory tree");
+
+    if ! pf.init_docs {
+        tree_dirs = tree_dirs.replace("\ndocs/", "");
+    }
+
 
     if pf.v { println!("Creating tree: "); }
     for dir in tree_dirs.lines() {

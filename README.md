@@ -19,6 +19,7 @@ Support for the following languages:
 - Fortran-90 (`f90`)
 - Arduino, almost the same as Arduino IDE (`arduino`)
 - C on ATMEL chips, aimed for arduino (`arduino-raw`)
+- C on Raspberry Pi Pico (reguires `PICO_SDK_PATH` to be set) (`pico`)
 - Rust, probably better to use `cargo` (`rust`)
 - LaTeX, might be iffy and it is highly personal (`latex`)
 

@@ -57,11 +57,11 @@ endif
 # Recipe for building, (re-)links the executable and triggers the build number
 # This is the default recipe
 .DEFAULT_GOAL = build
-build: $(MAIN_TEX_BIB) $(MAIN_TEX_pdf) build_number
+build: $(MAIN_TEX_BIB) $(MAIN_TEX_PDF) build_number
 
 # Recipe for running, just builds and executes the binary
 run: build
-	$(PDF_VIEWER) $(MAIN_PDF) & disown
+	$(PDF_VIEWER) $(MAIN_TEX_PDF) & disown
 
 # Recipe for cleaning. Removes all objects and binaries
 clean:

@@ -12,45 +12,59 @@
 \RequirePackage{caption}
 \RequirePackage{physics}
 \RequirePackage{esint}
+\RequirePackage[UKenglish]{datetime}
 
 \newcommand\csettags{\numberwithin{equation}{section}}
 
 % Add a star and equation number next to an equation with this tag
 \newtagform{starred}[]{(}{*)}
 
+\newdateformat{UKvardate}{
+\THEDAY\ \monthname[\THEMONTH] \THEYEAR
+}
+\UKvardate
+
+
 % Custom full title page
+% #1 - Title
+% #2 - Subtitle? Free space?
 \newcommand{\ctitlepage}[2]{{
 	\begin{titlepage}
 		\centering
 		{\upshape\Large #1\par}
 		\vspace{2cm}
-		{\upshape\large YOUR NAME \par}
+		{\upshape\large \yourname\par}
 		\vspace{1.5cm}
 		{\upshape\large #2\par}
+		\vspace{0.25cm}
+		{\upshape \youraddress\par}
 		\vfill
-		{\small Last Revised: \today}
+		{\small Last revised:\today}
 	\end{titlepage}
 }}
 
 % Custom small title page or report title
+% #1 - Title
 \newcommand{\csmalltitle}[1]{{
 	\begin{center}
 		{\upshape\bfseries \LARGE #1\par}
 		\vspace{0.25cm}
-		{\upshape YOUR NAME \par}
+		{\upshape \yourname\par}
 		\vspace{0.25cm}
-		{\upshape YOUR ADDRESS \par}
+		{\upshape \youraddress\par}
 	\end{center}
 }}
 
 % Custom title page with title and contents
+% #1 - Title
+% #2 - Created date
 \newcommand{\ctitlecontents}[2]{{
 	\begin{center}
-		{\upshape\Large #1 \par}
+		{\upshape\Large #1\par}
 		\vspace{0.25cm}
-		{\upshape\large YOUR NAME \par}
+		{\upshape\large \yourname\par}
 		\vspace{0.25cm}
-		{\upshape\small Created #2, Last Revised \today\par}
+		{\upshape\small Created:#2; Last revised:\today\par}
 		\vspace{0.5cm}
 		\@starttoc{toc}
 	\end{center}

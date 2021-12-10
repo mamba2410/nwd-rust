@@ -5,13 +5,20 @@
 % base directory for images is here
 \graphicspath{ {./images/} }
 
+% Created date
+\newdate{datecreated}{1}{1}{1970}
+
+% Author info
+\newcommand{\yourname}{YOUR NAME}
+\newcommand{\youraddress}{YOUR ADDRESS}
+
 %\usepackage[backend=biber,style=authoryear,citestyle=authoryear]{biblatex}
 %\addbibresource{references.bib}
 
 
 \begin{document}
 	% Title and contents page. Title, date
-	\ctitlecontents{<++>}{<++>}
+	\ctitlecontents{<++>}{\displaydate{datecreated}}
 	
 	% Most revision notes will need constants and general info either about the topic or the course.
 	\chapter{Constants and Useful Information}

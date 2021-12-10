@@ -231,7 +231,7 @@ fn main() {
     }
 
     if pf.v { println!("Copying readme"); }
-    copy_and_sed(&pf.program_home.unwrap().join("docs/README.md"), &pf.project_path.unwrap().join("README"),
+    copy_and_sed(&pf.program_home.unwrap().join("docs/README.md"), &pf.project_path.unwrap().join("README.md"),
         "PROJECT_NAME", &project_name)
         .expect("Can't copy over readme");
 
